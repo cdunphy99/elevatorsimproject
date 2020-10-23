@@ -23,9 +23,39 @@ struct passengerGroupArray {
     struct passengerGroup *theArray;
 };
 
-struct passengerGroup *addPassengerGroup(struct passengerGroup toAdd, struct passengerGroupArray theArray) {
-
+void addPassengerGroup(struct passengerGroup toAdd, struct passengerGroupArray *passengers) {
+    if(passengers->size == 0){
+        passengers->theArray = malloc(sizeof(struct passengerGroup));
+        passengers->theArray[0] = toAdd;
+        passengers->size++;
+        return;
+    }
+    struct passengerGroup *newArray = malloc(sizeof(struct passengerGroup) * (++passengers->size));
+    for(int i = 0; i < passengers->size - 1; i++){
+        newArray[i] = passengers->theArray[i];
+    }
+    newArray[passengers->size - 1] = toAdd;
+    //free(passengers->theArray);
+    passengers->theArray = newArray;
 }
+
+void removePassengerGroup(int toRemoveIndex, struct passengerGroupArray *passengers){
+    if(passengers->size == 0){
+        return;
+    }
+    struct passengerGroup *newArray = malloc(sizeof(struct passengerGroup) * (--passengers->size));
+    for(int i = 0; i < passengers->size; i++){
+        if(i == toRemoveIndex){
+            continue;
+        }
+        else{
+            newArray[i] = passengers->theArray[i];
+        }
+    }
+    //free(passengers->theArray);
+    passengers->theArray = newArray;
+}
+
 
 struct elevator {
     int currentFloor;
