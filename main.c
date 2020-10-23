@@ -1,6 +1,7 @@
 #include <stdio.h>
-
+#include <pthread.h>
+#include "dataStructures.h"
 int main() {
-    printf("Hello, World!\n");
+
     return 0;
 }
