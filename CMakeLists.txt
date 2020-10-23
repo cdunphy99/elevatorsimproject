@@ -3,4 +3,4 @@ project(elevatorsimproject C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(elevatorsimproject main.c dataStructures.h randomGeneration.c)
+add_executable(elevatorsimproject main.c dataStructures.h randomGeneration.h)

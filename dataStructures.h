@@ -16,6 +16,7 @@ struct passengerGroup {
     // true = up, false = down
     bool direction;
     bool completed;
+    struct passengerGroup *next;
 };
 
 struct elevator {

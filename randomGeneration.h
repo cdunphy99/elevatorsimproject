@@ -1,9 +1,11 @@
 //
 // Created by alexi on 10/23/2020.
 //
+
+#ifndef ELEVATORSIMPROJECT_RANDOMGENERATION_H
+#define ELEVATORSIMPROJECT_RANDOMGENERATION_H
 #include "dataStructures.h"
 #include <stdlib.h>
-
 struct passengerGroup generatePassenger(int currentTime){
     struct passengerGroup toReturn;
     toReturn.numPassengers = (rand() % 10) + 1;
@@ -16,3 +18,5 @@ struct passengerGroup generatePassenger(int currentTime){
     }
     return toReturn;
 }
+
+#endif //ELEVATORSIMPROJECT_RANDOMGENERATION_H
