@@ -4,13 +4,12 @@
 #include "dataStructures.h"
 #include "randomGeneration.h"
 
-void init(struct linkedList *theList) {
+void init() {
 
 }
 
 int main() {
     struct elevator *elevator;
-    struct linkedList *passengerList;
-    init(passengerList);
+    init();
     return 0;
 }
