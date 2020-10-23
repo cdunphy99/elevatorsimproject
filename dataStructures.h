@@ -18,6 +18,15 @@ struct passengerGroup {
     bool completed;
 };
 
+struct passengerGroupArray {
+    int size;
+    struct passengerGroup *theArray;
+};
+
+struct passengerGroup *addPassengerGroup(struct passengerGroup toAdd, struct passengerGroupArray theArray) {
+
+}
+
 struct elevator {
     int currentFloor;
     // true = up, false = down

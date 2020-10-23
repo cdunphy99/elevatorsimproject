@@ -5,7 +5,8 @@
 #include "randomGeneration.h"
 
 void init() {
-
+    struct passengerGroupArray passengers;
+    passengers.size = 0;
 }
 
 int main() {
