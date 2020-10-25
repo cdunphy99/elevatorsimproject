@@ -63,7 +63,6 @@ void removePassengerGroup(int toRemoveIndex, struct passengerGroupArray *passeng
     passengers->theArray = newArray;
 }
 
-
 struct elevator {
     int currentFloor;
     // true = up, false = down

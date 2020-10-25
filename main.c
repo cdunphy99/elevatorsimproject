@@ -18,16 +18,18 @@ void *floorThread(void *argStruct){
     int interval = threadArgs->interval;
     struct passengerGroupArray *pendingRequests = threadArgs->pendingRequests;
     while(CURRENTTIME < TOTALTIME) {
+        pthread_mutex_lock(&timeMutex);
         if (CURRENTTIME % interval == 0) {
             if (rand() % TOTALFLOORS == 1) {
-                printf("Generating request on floor %d at time %d\n", floor, CURRENTTIME);
-                pthread_mutex_lock(&timeMutex);
+
                 pthread_mutex_lock(&mutex);
-                addPassengerGroup(generatePassenger(CURRENTTIME), pendingRequests);
+                struct passengerGroup toAdd = generatePassenger(CURRENTTIME, floor);
+                addPassengerGroup(toAdd, pendingRequests);
+                printf("Time %d: Call received at F%d with destination F%d\n", CURRENTTIME, toAdd.startFloor, toAdd.endFloor);
                 pthread_mutex_unlock(&mutex);
-                pthread_mutex_unlock(&timeMutex);
             }
         }
+        pthread_mutex_unlock(&timeMutex);
         sleep(1);
     }
     return NULL;
