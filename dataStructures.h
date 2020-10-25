@@ -23,6 +23,12 @@ struct passengerGroupArray {
     struct passengerGroup *theArray;
 };
 
+struct threadArgs {
+    int floorNumber;
+    int interval;
+    struct passengerGroupArray *pendingRequests;
+};
+
 void addPassengerGroup(struct passengerGroup toAdd, struct passengerGroupArray *passengers) {
     if(passengers->size == 0){
         passengers->theArray = malloc(sizeof(struct passengerGroup));
