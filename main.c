@@ -8,24 +8,35 @@
 int TOTALFLOORS;
 int TIMEINTERVAL;
 int TOTALTIME;
+int CURRENTTIME;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t timeMutex = PTHREAD_MUTEX_INITIALIZER;
 
 void *floorThread(void *argStruct){
-    struct threadArgs *threadArgs = (struct threadArgs*)argStruct;
+    struct threadArgs *threadArgs = (struct threadArgs *) argStruct;
     int floor = threadArgs->floorNumber;
     int interval = threadArgs->interval;
     struct passengerGroupArray *pendingRequests = threadArgs->pendingRequests;
-    pthread_mutex_lock(&mutex);
-    printf("I am floor %d\n", floor);
-    sleep(1);
-    pthread_mutex_unlock(&mutex);
-
+    while(CURRENTTIME < TOTALTIME) {
+        if (CURRENTTIME % interval == 0) {
+            if (rand() % TOTALFLOORS == 1) {
+                printf("Generating request on floor %d at time %d\n", floor, CURRENTTIME);
+                pthread_mutex_lock(&timeMutex);
+                pthread_mutex_lock(&mutex);
+                addPassengerGroup(generatePassenger(CURRENTTIME), pendingRequests);
+                pthread_mutex_unlock(&mutex);
+                pthread_mutex_unlock(&timeMutex);
+            }
+        }
+        sleep(1);
+    }
     return NULL;
 }
 
 void init(struct passengerGroupArray *toInit) {
     srand(time(0));
     toInit->size = 0;
+    CURRENTTIME = 0;
 //    struct passengerGroup test1 = generatePassenger(0);
 //    struct passengerGroup test2 = generatePassenger(5);
 //    addPassengerGroup(test1, &passengers);
@@ -46,6 +57,14 @@ void run() {
         args->interval = TIMEINTERVAL;
         args->pendingRequests = &pendingRequests;
         pthread_create(&threadArray[i], NULL, floorThread, (void*)args);
+    }
+    while(CURRENTTIME <= TOTALTIME){
+        sleep(1);
+        printf("Current time is %d\n", CURRENTTIME);
+        pthread_mutex_lock(&timeMutex);
+        CURRENTTIME++;
+        pthread_mutex_unlock(&timeMutex);
+
     }
     for(int i = 0; i < TOTALFLOORS; i++){
         pthread_join(threadArray[i], NULL);

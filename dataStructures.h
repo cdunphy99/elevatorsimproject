@@ -26,6 +26,7 @@ struct passengerGroupArray {
 struct threadArgs {
     int floorNumber;
     int interval;
+    int currentTime;
     struct passengerGroupArray *pendingRequests;
 };
 
