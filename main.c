@@ -4,21 +4,37 @@
 #include "dataStructures.h"
 #include "randomGeneration.h"
 
-void init() {
+int TOTALFLOORS;
+int TIMEINTERVAL;
+int TOTALTIME;
+
+void init(struct passengerGroupArray *toInit) {
     srand(time(0));
-    struct passengerGroupArray passengers;
-    passengers.size = 0;
-    struct passengerGroup test1 = generatePassenger(0);
-    struct passengerGroup test2 = generatePassenger(5);
-    addPassengerGroup(test1, &passengers);
-    addPassengerGroup(test2, &passengers);
-    for(int i = 0; i < passengers.size; i++){
-        printf("%d", passengers.theArray[i].numPassengers);
-    }
+    toInit->size = 0;
+//    struct passengerGroup test1 = generatePassenger(0);
+//    struct passengerGroup test2 = generatePassenger(5);
+//    addPassengerGroup(test1, &passengers);
+//    addPassengerGroup(test2, &passengers);
+//    for(int i = 0; i < passengers.size; i++){
+//        printf("%d", passengers.theArray[i].numPassengers);
+//    }
 }
 
-int main() {
+void run() {
     struct elevator *elevator;
-    init();
+    struct passengerGroupArray pendingRequests;
+    init(&pendingRequests);
+
+}
+
+int main(int argc, char **argv) {
+    if (argc != 3) {
+        printf("Usage: a.out [var_1] [var_2]\n");
+        exit(0);
+    }
+    TOTALFLOORS = atoi(argv[1]);
+    TIMEINTERVAL = atoi(argv[2]);
+    TOTALTIME = atoi(argv[3]);
+    run();
     return 0;
 }
