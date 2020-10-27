@@ -12,7 +12,17 @@ int CURRENTTIME;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t timeMutex = PTHREAD_MUTEX_INITIALIZER;
 
-void *floorThread(void *argStruct){
+bool dedupe(struct passengerGroupArray *toDedupe, struct passengerGroup toCheckFor) {
+    for(int i = 0; i < toDedupe->size; i++) {
+        if(toDedupe->theArray[i].startFloor == toCheckFor.startFloor && toDedupe->theArray[i].endFloor == toCheckFor.endFloor && !toCheckFor.completed) {
+            printf("Duplicate found! Not added to list.\n");
+            return true;
+        }
+    }
+    return false;
+}
+
+void *floorThread(void *argStruct) {
     struct threadArgs *threadArgs = (struct threadArgs *) argStruct;
     int floor = threadArgs->floorNumber;
     int interval = threadArgs->interval;
@@ -21,11 +31,17 @@ void *floorThread(void *argStruct){
         pthread_mutex_lock(&timeMutex);
         if (CURRENTTIME % interval == 0) {
             if (rand() % TOTALFLOORS == 1) {
-
                 pthread_mutex_lock(&mutex);
                 struct passengerGroup toAdd = generatePassenger(CURRENTTIME, floor);
-                addPassengerGroup(toAdd, pendingRequests);
-                printf("Time %d: Call received at F%d with destination F%d\n", CURRENTTIME, toAdd.startFloor, toAdd.endFloor);
+                if(dedupe(pendingRequests, toAdd)){
+                    pthread_mutex_unlock(&mutex);
+                    pthread_mutex_unlock(&timeMutex);
+                    continue;
+                }
+                else{
+                    addPassengerGroup(toAdd, pendingRequests);
+                    printf("Time %d: Call received at F%d with destination F%d\n", CURRENTTIME, toAdd.startFloor, toAdd.endFloor);
+                }
                 pthread_mutex_unlock(&mutex);
             }
         }
