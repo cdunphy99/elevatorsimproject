@@ -23,6 +23,13 @@ struct passengerGroupArray {
     struct passengerGroup *theArray;
 };
 
+struct threadArgs {
+    int floorNumber;
+    int interval;
+    int currentTime;
+    struct passengerGroupArray *pendingRequests;
+};
+
 void addPassengerGroup(struct passengerGroup toAdd, struct passengerGroupArray *passengers) {
     if(passengers->size == 0){
         passengers->theArray = malloc(sizeof(struct passengerGroup));
@@ -55,7 +62,6 @@ void removePassengerGroup(int toRemoveIndex, struct passengerGroupArray *passeng
     //free(passengers->theArray);
     passengers->theArray = newArray;
 }
-
 
 struct elevator {
     int currentFloor;
