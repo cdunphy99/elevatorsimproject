@@ -14,7 +14,7 @@ pthread_mutex_t timeMutex = PTHREAD_MUTEX_INITIALIZER;
 
 bool dedupe(struct passengerGroupArray *toDedupe, struct passengerGroup toCheckFor) {
     for(int i = 0; i < toDedupe->size; i++) {
-        if(toDedupe->theArray[i].startFloor == toCheckFor.startFloor && toDedupe->theArray[i].endFloor == toCheckFor.endFloor && !toCheckFor.completed) {
+        if(toDedupe->theArray[i].startFloor == toCheckFor.startFloor && toDedupe->theArray[i].endFloor == toCheckFor.endFloor && toDedupe->theArray[i].generatedTime == toCheckFor.generatedTime) {
             printf("Duplicate found! Not added to list.\n");
             return true;
         }
@@ -64,6 +64,8 @@ void init(struct passengerGroupArray *toInit) {
 //    }
 }
 
+void elevator()
+
 void run() {
     struct elevator *elevator;
     struct passengerGroupArray pendingRequests;
@@ -84,6 +86,9 @@ void run() {
         pthread_mutex_unlock(&timeMutex);
 
     }
+
+
+
     for(int i = 0; i < TOTALFLOORS; i++){
         pthread_join(threadArray[i], NULL);
     }
