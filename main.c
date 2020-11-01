@@ -11,6 +11,8 @@ int TOTALTIME;
 int CURRENTTIME;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t timeMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t timeWait = PTHREAD_COND_INITIALIZER;
+bool waiting = false;
 
 bool dedupe(struct passengerGroupArray *toDedupe, struct passengerGroup toCheckFor) {
     for(int i = 0; i < toDedupe->size; i++) {
@@ -64,32 +66,33 @@ void init(struct passengerGroupArray *toInit) {
 //    }
 }
 
-void goUp(struct elevator *elevator){
+void waitFor(int howLong) {
+    waiting = true;
     pthread_mutex_lock(&timeMutex);
-    elevator->currentState = 2;
-    printf("Going up at %d, before sleep, current floor: %d\n", CURRENTTIME, elevator->currentFloor);
-    for(int i = 0; i <= 5; i++){
-        printf("Current time is %d\n", CURRENTTIME);
+    for(int i = 0; i < howLong; i++){
         CURRENTTIME++;
         sleep(1);
+        printf("Waited for %d/%d\n", i + 1, howLong);
     }
-    elevator->currentFloor++;
-    printf("Going up at %d, took nap, current floor: %d\n", CURRENTTIME, elevator->currentFloor);
+    printf("Done waiting, current time is %d\n", CURRENTTIME);
+    pthread_cond_broadcast(&timeWait);
     pthread_mutex_unlock(&timeMutex);
 }
 
+void goUp(struct elevator *elevator){
+    elevator->currentState = 2;
+    printf("Going up at time %d, current floor: %d\n", CURRENTTIME, elevator->currentFloor);
+    waitFor(5);
+    elevator->currentFloor++;
+    printf("Arrived at time %d, current floor: %d\n", CURRENTTIME, elevator->currentFloor);
+}
+
 void goDown(struct elevator *elevator){
-    pthread_mutex_lock(&timeMutex);
     elevator->currentState = 3;
-    printf("Going down, before sleep, current floor: %d\n", elevator->currentFloor);
-    for(int i = 0; i <= 5; i++){
-        printf("Current time is %d\n", CURRENTTIME);
-        CURRENTTIME++;
-        sleep(1);
-    }
+    printf("Going down at time %d, current floor: %d\n", CURRENTTIME, elevator->currentFloor);
+    waitFor(5);
     elevator->currentFloor--;
-    printf("Going down, took nap, current floor: %d\n", elevator->currentFloor);
-    pthread_mutex_unlock(&timeMutex);
+    printf("Arrived at time %d, current floor: %d\n", CURRENTTIME, elevator->currentFloor);
 }
 
 int getInProgress(struct passengerGroupArray *pendingRequests){
@@ -110,7 +113,8 @@ void *elevatorScheduler (void *argStruct) {
     elevator->direction = true;
     bool passengerOperation;
     while(CURRENTTIME <= TOTALTIME) {
-        for (int i = 0; i < pendingRequests->size; i++) {
+        int currentPending = pendingRequests->size;
+        for (int i = 0; i < currentPending; i++) {
             printf("fuck\n");
             // max 10 people in the car, compare num passengers to 10
             // compare direction of passengers to current direciton of elevator
@@ -134,11 +138,8 @@ void *elevatorScheduler (void *argStruct) {
                     passengerOperation = true;
                 }
                 if(passengerOperation){
-                    pthread_mutex_lock(&timeMutex);
-                    sleep(2);
-                    CURRENTTIME += 2;
+                    waitFor(2);
                     printf("passenger operation done, time increased by 2\n");
-                    pthread_mutex_unlock(&timeMutex);
                 }
             }
         }
@@ -152,19 +153,24 @@ void *elevatorScheduler (void *argStruct) {
             printf("Elevator standing still\n");
         }
         if(!passengerOperation){
-            sleep(1);
+            waitFor(1);
         }
     }
 }
 
 void *timeThread(){
     while(CURRENTTIME <= TOTALTIME){
+        while(waiting){
+            pthread_cond_wait(&timeWait, &timeMutex);
+            waiting = false;
+        }
         sleep(1);
         pthread_mutex_lock(&timeMutex);
         printf("Current time is %d\n", CURRENTTIME);
         CURRENTTIME++;
         pthread_mutex_unlock(&timeMutex);
     }
+    return NULL;
 }
 
 void run() {
@@ -187,7 +193,6 @@ void run() {
     pthread_create(&elevatorThread, NULL, elevatorScheduler, (void*) args);
     pthread_t timeThreadtime;
     pthread_create(&timeThreadtime, NULL, timeThread, NULL);
-
     for(int i = 0; i < TOTALFLOORS; i++){
         pthread_join(threadArray[i], NULL);
     }
