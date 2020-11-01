@@ -64,12 +64,37 @@ void init(struct passengerGroupArray *toInit) {
 //    }
 }
 
-void orderRequests(struct passengerGroupArray *pendingRequests, struct elevator *elevator) {
-    if(!pendingRequests->theArray[0].completed) {
-        elevator->direction = pendingRequests->theArray[0].direction; // this should always be true the first time
-    }
-    else {
+void *elevatorScheduler (void *argStruct) {
+    struct threadArgs *threadArgs = (struct threadArgs *) argStruct;
+    struct passengerGroupArray *pendingRequests = threadArgs->pendingRequests;
+    struct elevator *elevator = threadArgs->elevator;
 
+    for(int i = 0; i < pendingRequests->size; i++) {
+        printf("fuck\n");
+        // max 10 people in the car, compare num passengers to 10
+        // compare direction of passengers to current direciton of elevator
+        // compare start floor with current floor for passengers boarding
+        // compare end floor with current passengers endfloors for passengers leaving
+        if(elevator->numPassengersOnElevator + pendingRequests->theArray[i].numPassengers <= 10 && !pendingRequests->theArray[i].completed && elevator->direction == pendingRequests->theArray[i].direction){
+            // if they can board, now we see what passengerGroups there are available to board at the current floor at array[i]
+            if(elevator->currentFloor == pendingRequests->theArray[i].startFloor) {
+                // boarding elevator, coming onto elevator
+                elevator->numPassengersOnElevator += pendingRequests->theArray[i].numPassengers;
+
+            }
+
+        }
+
+    }
+}
+
+void *timeThread(){
+    while(CURRENTTIME <= TOTALTIME){
+        sleep(1);
+        printf("Current time is %d\n", CURRENTTIME);
+        pthread_mutex_lock(&timeMutex);
+        CURRENTTIME++;
+        pthread_mutex_unlock(&timeMutex);
     }
 }
 
@@ -85,21 +110,20 @@ void run() {
         args->pendingRequests = &pendingRequests;
         pthread_create(&threadArray[i], NULL, floorThread, (void*)args);
     }
-    while(CURRENTTIME <= TOTALTIME){
-        sleep(1);
-        printf("Current time is %d\n", CURRENTTIME);
-        // elevator logic here
-        pthread_mutex_lock(&timeMutex);
-        CURRENTTIME++;
-        pthread_mutex_unlock(&timeMutex);
-
-    }
-
-
+    pthread_t elevatorThread;
+    struct threadArgs *args = malloc(sizeof(struct threadArgs));
+    elevator = malloc(sizeof(struct elevator));
+    args->pendingRequests = &pendingRequests;
+    args->elevator = elevator;
+    pthread_create(&elevatorThread, NULL, elevatorScheduler, (void*) args);
+    pthread_t timeThreadtime;
+    pthread_create(&timeThreadtime, NULL, timeThread, NULL);
 
     for(int i = 0; i < TOTALFLOORS; i++){
         pthread_join(threadArray[i], NULL);
     }
+    pthread_join(timeThreadtime, NULL);
+    pthread_join(elevatorThread, NULL);
 }
 
 int main(int argc, char **argv) {

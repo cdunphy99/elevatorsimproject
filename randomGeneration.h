@@ -19,6 +19,12 @@ struct passengerGroup generatePassenger(int currentTime, int startFloor){
         toReturn.startFloor = (rand() % 8) + 1;
         toReturn.endFloor = (rand() % 8) + 1;
     }
+    if(toReturn.startFloor > toReturn.endFloor){
+        toReturn.direction = false;
+    }
+    else{
+        toReturn.direction = true;
+    }
     return toReturn;
 }
 

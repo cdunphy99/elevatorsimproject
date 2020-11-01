@@ -18,6 +18,18 @@ struct passengerGroup {
     bool completed;
 };
 
+
+struct elevator {
+    int currentFloor;
+    // true = up, false = down
+    bool direction;
+    int numPassengersOnElevator;
+    int *path;
+    // 0 = stopped, 1 = stopping, 2 = going up, 3 = going down
+    int currentState;
+};
+
+
 struct passengerGroupArray {
     int size;
     struct passengerGroup *theArray;
@@ -28,6 +40,7 @@ struct threadArgs {
     int interval;
     int currentTime;
     struct passengerGroupArray *pendingRequests;
+    struct elevator *elevator;
 };
 
 void addPassengerGroup(struct passengerGroup toAdd, struct passengerGroupArray *passengers) {
@@ -62,15 +75,5 @@ void removePassengerGroup(int toRemoveIndex, struct passengerGroupArray *passeng
     //free(passengers->theArray);
     passengers->theArray = newArray;
 }
-
-struct elevator {
-    int currentFloor;
-    // true = up, false = down
-    bool direction;
-    int numPassengersOnElevator;
-    int *path;
-    // 0 = stopped, 1 = stopping, 2 = going up, 3 = going down
-    int currentState;
-};
 
 #endif //ELEVATORSIMPROJECT_DATASTRUCTURES_H
