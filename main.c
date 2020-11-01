@@ -64,7 +64,14 @@ void init(struct passengerGroupArray *toInit) {
 //    }
 }
 
-void elevator()
+void orderRequests(struct passengerGroupArray *pendingRequests, struct elevator *elevator) {
+    if(!pendingRequests->theArray[0].completed) {
+        elevator->direction = pendingRequests->theArray[0].direction; // this should always be true the first time
+    }
+    else {
+
+    }
+}
 
 void run() {
     struct elevator *elevator;
@@ -81,6 +88,7 @@ void run() {
     while(CURRENTTIME <= TOTALTIME){
         sleep(1);
         printf("Current time is %d\n", CURRENTTIME);
+        // elevator logic here
         pthread_mutex_lock(&timeMutex);
         CURRENTTIME++;
         pthread_mutex_unlock(&timeMutex);
