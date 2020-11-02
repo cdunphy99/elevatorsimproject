@@ -26,6 +26,7 @@ struct elevator {
     bool direction;
     int numPassengersOnElevator;
     int *path;
+    int pathSize;
     // 0 = stopped, 1 = stopping, 2 = going up, 3 = going down
     int currentState;
 };
