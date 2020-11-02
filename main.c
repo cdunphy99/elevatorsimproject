@@ -80,6 +80,8 @@ void waitFor(int howLong) {
 }
 
 void goUp(struct elevator *elevator){
+    if(!elevator->direction) printf("ALERT: Elevator changing directions to up\n");
+    elevator->direction = true;
     elevator->currentState = 2;
     printf("Going up at time %d, current floor: %d\n", CURRENTTIME, elevator->currentFloor);
     waitFor(5);
@@ -88,6 +90,8 @@ void goUp(struct elevator *elevator){
 }
 
 void goDown(struct elevator *elevator){
+    if(elevator->direction) printf("ALERT: Elevator changing directions to down\n");
+    elevator->direction = false;
     elevator->currentState = 3;
     printf("Going down at time %d, current floor: %d\n", CURRENTTIME, elevator->currentFloor);
     waitFor(5);
@@ -105,37 +109,53 @@ int getInProgress(struct passengerGroupArray *pendingRequests){
     return toReturn;
 }
 
+
 void *elevatorScheduler (void *argStruct) {
     struct threadArgs *threadArgs = (struct threadArgs *) argStruct;
     struct passengerGroupArray *pendingRequests = threadArgs->pendingRequests;
     struct elevator *elevator = threadArgs->elevator;
     elevator->currentFloor = 1;
     elevator->direction = true;
+    elevator->numPassengersOnElevator = 0;
     bool passengerOperation;
     while(CURRENTTIME <= TOTALTIME) {
-        int currentPending = pendingRequests->size;
-        for (int i = 0; i < currentPending; i++) {
-            printf("fuck\n");
+        for (int i = 0; i < pendingRequests->size; i++) {
             // max 10 people in the car, compare num passengers to 10
             // compare direction of passengers to current direciton of elevator
             // compare start floor with current floor for passengers boarding
             // compare end floor with current passengers endfloors for passengers leaving
-            if (elevator->numPassengersOnElevator + pendingRequests->theArray[i].numPassengers <= 10 &&
-                !pendingRequests->theArray[i].completed &&
-                elevator->direction == pendingRequests->theArray[i].direction) {
+
+            if (!pendingRequests->theArray[i].completed) {
                 // if they can board, now we see what passengerGroups there are available to board at the current floor at array[i]
                 passengerOperation = false;
-                if (elevator->currentFloor == pendingRequests->theArray[i].startFloor) {
+                if (elevator->currentFloor == pendingRequests->theArray[i].startFloor && elevator->direction == pendingRequests->theArray[i].direction && elevator->numPassengersOnElevator + pendingRequests->theArray[i].numPassengers <= 10) {
                     // boarding elevator, coming onto elevator
                     elevator->numPassengersOnElevator += pendingRequests->theArray[i].numPassengers;
                     pendingRequests->theArray[i].timePickedUp = CURRENTTIME;
+                    pendingRequests->theArray[i].inProgress = true;
+                    printf("%d passengers boarding on floor %d at %d, destination F%d\n",
+                           pendingRequests->theArray[i].numPassengers, elevator->currentFloor, CURRENTTIME,
+                           pendingRequests->theArray[i].endFloor);
+                    printf("Current number of passengers: %d\n\n", elevator->numPassengersOnElevator);
                     passengerOperation = true;
                 }
+
+
+
                 if (elevator->currentFloor == pendingRequests->theArray[i].endFloor && pendingRequests->theArray[i].inProgress) {
-                    elevator->numPassengersOnElevator -= pendingRequests->theArray[i].numPassengers;
-                    pendingRequests->theArray[i].timeDroppedOff = CURRENTTIME;
-                    pendingRequests->theArray[i].completed = true;
-                    passengerOperation = true;
+                    if(elevator->numPassengersOnElevator - pendingRequests->theArray[i].numPassengers >= 0) {
+                        elevator->numPassengersOnElevator -= pendingRequests->theArray[i].numPassengers;
+                        pendingRequests->theArray[i].timeDroppedOff = CURRENTTIME;
+                        pendingRequests->theArray[i].completed = true;
+                        pendingRequests->theArray[i].inProgress = false;
+                        printf("%d passengers left on floor %d at %d\n", pendingRequests->theArray[i].numPassengers, elevator->currentFloor, CURRENTTIME);
+                        printf("Current number of passengers: %d\n\n", elevator->numPassengersOnElevator);
+                        passengerOperation = true;
+                    }
+                    else{
+                        printf("something fucky\n");
+                    }
+
                 }
                 if(passengerOperation){
                     waitFor(2);
@@ -143,14 +163,16 @@ void *elevatorScheduler (void *argStruct) {
                 }
             }
         }
-        if(elevator->direction && getInProgress(pendingRequests) > 0){
+        printf("Current number of passengers: %d\n\n", elevator->numPassengersOnElevator);
+        if(elevator->direction && getInProgress(pendingRequests) > 0 && elevator->currentFloor < TOTALFLOORS){
             goUp(elevator);
         }
-        else if(!elevator->direction && getInProgress(pendingRequests) > 0){
+        else if(!elevator->direction && getInProgress(pendingRequests) > 0 && elevator->currentFloor != 1){
             goDown(elevator);
         }
         else{
             printf("Elevator standing still\n");
+            waitFor(1);
         }
         if(!passengerOperation){
             waitFor(1);
@@ -164,9 +186,9 @@ void *timeThread(){
             pthread_cond_wait(&timeWait, &timeMutex);
             waiting = false;
         }
-        sleep(1);
-        pthread_mutex_lock(&timeMutex);
+        //pthread_mutex_lock(&timeMutex);
         printf("Current time is %d\n", CURRENTTIME);
+        sleep(1);
         CURRENTTIME++;
         pthread_mutex_unlock(&timeMutex);
     }
