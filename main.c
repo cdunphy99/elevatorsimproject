@@ -33,7 +33,7 @@ void *floorThread(void *argStruct) {
     struct passengerGroupArray *pendingRequests = threadArgs->pendingRequests;
     while (CURRENTTIME < TOTALTIME) {
         pthread_mutex_lock(&timeMutex);
-        if (CURRENTTIME % interval == 0) {
+        if (CURRENTTIME == 0) {
             if (rand() % TOTALFLOORS == 3) {
                 //pthread_mutex_lock(&mutex);
                 struct passengerGroup toAdd = generatePassenger(CURRENTTIME, floor);
@@ -124,6 +124,17 @@ int getPending(struct passengerGroupArray *pendingRequests, bool direction) {
     return toReturn;
 }
 
+int getPendingAbove(struct passengerGroupArray *pendingRequests, bool direction, int floor) {
+    int toReturn = 0;
+    for (int i = 0; i < pendingRequests->size; i++) {
+        if (pendingRequests->theArray[i].direction == direction && !pendingRequests->theArray[i].completed &&
+            !pendingRequests->theArray[i].inProgress && pendingRequests->theArray[i].startFloor > floor) {
+            toReturn++;
+        }
+    }
+    return toReturn;
+}
+
 void printCurrentPassengers(struct passengerGroupArray *pendingRequests){
     for(int i = 0; i < pendingRequests->size; i++){
         if(pendingRequests->theArray[i].inProgress) {
@@ -132,6 +143,14 @@ void printCurrentPassengers(struct passengerGroupArray *pendingRequests){
                    pendingRequests->theArray[i].timePickedUp, pendingRequests->theArray[i].endFloor);
         }
     }
+}
+
+bool whichDirection(struct passengerGroupArray *pendingRequests, struct elevator *elevator){
+    // if there are no pending starts above current floor when going up, we want to go down
+    if(getPendingAbove(pendingRequests, true, elevator->currentFloor)){
+        return false;
+    }
+    return elevator->direction;
 }
 
 void *elevatorScheduler(void *argStruct) {
@@ -193,10 +212,10 @@ void *elevatorScheduler(void *argStruct) {
         }
 
         printCurrentPassengers(pendingRequests);
-        if (elevator->numPassengersOnElevator != 0 || getInProgress(pendingRequests, true) || (getPending(pendingRequests, true)) && elevator->numPassengersOnElevator == 0){
+        elevator->direction = whichDirection(pendingRequests, elevator);
+        if (elevator->direction == true){
             goUp(elevator);
-        } else if (elevator->numPassengersOnElevator != 0 || getInProgress(pendingRequests, false) ||
-                (getPending(pendingRequests, false)) && elevator->numPassengersOnElevator == 0) {
+        } else if (elevator->direction == false) {
             goDown(elevator);
         } else {
             printf("Elevator standing still\n");

@@ -13,6 +13,7 @@ struct passengerGroup generatePassenger(int currentTime, int startFloor){
     //toReturn.startFloor = 3;
     toReturn.endFloor = (rand() % 8) + 1;
     //toReturn.endFloor = rand() % 2 + 1;
+    //toReturn.endFloor = 1;
     toReturn.generatedTime = currentTime;
     toReturn.completed = false;
     toReturn.inProgress = false;
