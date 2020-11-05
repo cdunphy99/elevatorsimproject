@@ -187,22 +187,34 @@ bool shouldStop(struct passengerGroupArray *pendingRequests) {
     return toReturn;
 }
 
+bool anyInProgressGoingDirection(struct passengerGroupArray *pendingRequests, bool direction){
+    bool toReturn = false;
+    for(int i = 0; i < pendingRequests->size; i++){
+        if(pendingRequests->theArray[i].inProgress && pendingRequests->theArray[i].direction == direction){
+            toReturn = true;
+        }
+    }
+    return toReturn;
+}
+
 bool whichDirection(struct passengerGroupArray *pendingRequests, struct elevator *elevator) {
     // if there are no pending starts above current floor when going up, we want to go down
     if(elevator->direction == false) {
-        if (getPendingAbove(pendingRequests, true, elevator->currentFloor)) {
-            return false;
+        if (getPendingAbove(pendingRequests, true, elevator->currentFloor) && !anyInProgressGoingDirection(pendingRequests, false)) {
+            printf("Elevator changed direction in whichdirection, now going up\n");
+            return true;
         }
-        else if(getPendingAbove(pendingRequests, false, elevator->currentFloor)){
+        else if(getPendingAbove(pendingRequests, false, elevator->currentFloor) && anyInProgressGoingDirection(pendingRequests, false)){
             return elevator->direction;
         }
         return elevator->direction;
     }
     else if(elevator->direction == true){
-        if(getPendingBelow(pendingRequests, false, elevator->currentFloor)){
-            return true;
+        if(getPendingBelow(pendingRequests, false, elevator->currentFloor)  && !anyInProgressGoingDirection(pendingRequests, true)){
+            printf("Elevator changed direction in whichdirection, now going down\n");
+            return false;
         }
-        else if (getPendingBelow(pendingRequests, true, elevator->currentFloor)){
+        else if (getPendingBelow(pendingRequests, true, elevator->currentFloor) && anyInProgressGoingDirection(pendingRequests, false)){
             return elevator->direction;
         }
         return elevator->direction;
@@ -229,7 +241,7 @@ void *elevatorScheduler(void *argStruct) {
                 // if they can board, now we see what passengerGroups there are available to board at the current floor at array[i]
 
                 if (elevator->currentFloor == pendingRequests->theArray[i].startFloor &&
-                    elevator->numPassengersOnElevator + pendingRequests->theArray[i].numPassengers <= 10) {
+                    elevator->numPassengersOnElevator + pendingRequests->theArray[i].numPassengers <= 10 && elevator->direction == pendingRequests->theArray[i].direction) {
                     // boarding elevator, coming onto elevator
                     if (elevator->direction != pendingRequests->theArray[i].direction) {
                         elevator->direction = pendingRequests->theArray[i].direction;
