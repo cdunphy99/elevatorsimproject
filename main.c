@@ -36,7 +36,7 @@ void *floorThread(void *argStruct) {
     while (CURRENTTIME < TOTALTIME) {
         pthread_mutex_lock(&timeMutex);
         if (CURRENTTIME == 0) {
-            if (rand() % TOTALFLOORS == 3) {
+            if (rand() % TOTALFLOORS <= 2) {
                 //pthread_mutex_lock(&mutex);
                 struct passengerGroup toAdd = generatePassenger(CURRENTTIME, floor);
                 if (dedupe(pendingRequests, toAdd)) {
