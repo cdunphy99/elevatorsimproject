@@ -146,7 +146,7 @@ int getPendingBelow(struct passengerGroupArray *pendingRequests, bool direction,
     return toReturn;
 }
 
-void printCurrentPassengers(struct passengerGroupArray *pendingRequests){
+void printCurrentPassengers(struct passengerGroupArray *pendingRequests) {
     for(int i = 0; i < pendingRequests->size; i++){
         if(pendingRequests->theArray[i].inProgress) {
             printf("\nCURRENT PASSENGERS: %d passengers picked up at F%d at time %d, destination F%d\n",
@@ -156,7 +156,17 @@ void printCurrentPassengers(struct passengerGroupArray *pendingRequests){
     }
 }
 
-bool whichDirection(struct passengerGroupArray *pendingRequests, struct elevator *elevator){
+bool shouldStop(struct passengerGroupArray *pendingRequests) {
+    bool toReturn = true;
+    for(int i = 0; i < pendingRequests->size; i++){
+        if((!pendingRequests->theArray[i].completed && !pendingRequests->theArray[i].inProgress) || (!pendingRequests->theArray[i].completed)){
+            toReturn = false;
+        }
+    }
+    return toReturn;
+}
+
+bool whichDirection(struct passengerGroupArray *pendingRequests, struct elevator *elevator) {
     // if there are no pending starts above current floor when going up, we want to go down
     if(elevator->direction == false) {
         if (getPendingAbove(pendingRequests, true, elevator->currentFloor)) {
@@ -236,10 +246,12 @@ void *elevatorScheduler(void *argStruct) {
         }
         printCurrentPassengers(pendingRequests);
         elevator->direction = whichDirection(pendingRequests, elevator);
-        if (elevator->direction == true){
-            goUp(elevator);
-        } else if (elevator->direction == false) {
-            goDown(elevator);
+        if(!shouldStop(pendingRequests)){
+            if (elevator->direction == true){
+                goUp(elevator);
+            } else if (elevator->direction == false) {
+                goDown(elevator);
+            }
         } else {
             printf("Elevator standing still\n");
             waitFor(1);
