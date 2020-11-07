@@ -90,6 +90,9 @@ void waitFor(int howLong) {
 }
 
 void goUp(struct elevator *elevator) {
+    if (elevator->currentFloor + 1 > TOTALFLOORS) {
+        return;
+    }
     if (elevator->direction == false) {
         printf("ALERT: Elevator changing directions to up\n");
         fprintf(OUTFILE,"ALERT: Elevator changing directions to up\n");
@@ -106,6 +109,9 @@ void goUp(struct elevator *elevator) {
 }
 
 void goDown(struct elevator *elevator) {
+    if (elevator->currentFloor - 1 <= 0) {
+        return;
+    }
     if (elevator->direction == true) {
         printf("ALERT: Elevator changing directions to down\n");
         fprintf(OUTFILE, "ALERT: Elevator changing directions to down\n");
