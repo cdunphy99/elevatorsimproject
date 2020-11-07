@@ -124,7 +124,7 @@ bool getPending(struct passengerGroupArray *pendingRequests) {
     return toReturn;
 }
 
-bool getPendingAbove(struct passengerGroupArray *pendingRequests, bool direction, int floor) {
+bool getPendingAbove(struct passengerGroupArray *pendingRequests, int floor) {
     bool toReturn = false;
     for (int i = 0; i < pendingRequests->size; i++) {
         if (!pendingRequests->theArray[i].completed &&
@@ -135,7 +135,7 @@ bool getPendingAbove(struct passengerGroupArray *pendingRequests, bool direction
     return toReturn;
 }
 
-bool getPendingBelow(struct passengerGroupArray *pendingRequests, bool direction, int floor) {
+bool getPendingBelow(struct passengerGroupArray *pendingRequests, int floor) {
     bool toReturn = false;
     for (int i = 0; i < pendingRequests->size; i++) {
         if (!pendingRequests->theArray[i].completed &&
@@ -186,11 +186,11 @@ bool whichDirection(struct passengerGroupArray *pendingRequests, struct elevator
             elevator->direction = true;
             return true;
         }
-        if (getPendingBelow(pendingRequests, true, elevator->currentFloor) || anyInProgressGoingDirection(pendingRequests, false)) {
+        if (getPendingBelow(pendingRequests, elevator->currentFloor) || anyInProgressGoingDirection(pendingRequests, false)) {
             printf("continuing in current direction\n");
             return elevator->direction;
-        } else if (getPendingAbove(pendingRequests, false, elevator->currentFloor) || !anyInProgressGoingDirection(pendingRequests, false)) {
-            printf("getpendingabove: %d\n", getPendingAbove(pendingRequests, true, elevator->currentFloor));
+        } else if (getPendingAbove(pendingRequests, elevator->currentFloor) || !anyInProgressGoingDirection(pendingRequests, false)) {
+            printf("getpendingabove: %d\n", getPendingAbove(pendingRequests, elevator->currentFloor));
             printf("Elevator changed direction in whichdirection, now going up\n");
             elevator->direction = true;
             return true;
@@ -202,11 +202,11 @@ bool whichDirection(struct passengerGroupArray *pendingRequests, struct elevator
             elevator->direction = false;
             return false;
         }
-        if (getPendingAbove(pendingRequests, false, elevator->currentFloor) || anyInProgressGoingDirection(pendingRequests, true)) {
+        if (getPendingAbove(pendingRequests, elevator->currentFloor) || anyInProgressGoingDirection(pendingRequests, true)) {
             printf("continuing in current direction\n");
             return elevator->direction;
-        } else if (getPendingBelow(pendingRequests, true, elevator->currentFloor) || !anyInProgressGoingDirection(pendingRequests, true)) {
-            printf("getpendingbelow: %d\n", getPendingBelow(pendingRequests, true, elevator->currentFloor));
+        } else if (getPendingBelow(pendingRequests, elevator->currentFloor) || !anyInProgressGoingDirection(pendingRequests, true)) {
+            printf("getpendingbelow: %d\n", getPendingBelow(pendingRequests, elevator->currentFloor));
             printf("Elevator changed direction in whichdirection, now going down\n");
             elevator->direction = false;
             return false;
@@ -332,6 +332,7 @@ void *elevatorScheduler(void *argStruct) {
         printf("\n\n");
         fprintf(OUTFILE, "\n\n");
     }
+    return NULL;
 }
 
 void *timeThread() {
