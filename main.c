@@ -152,7 +152,7 @@ int getPendingAbove(struct passengerGroupArray *pendingRequests, bool direction,
     int toReturn = 0;
     for (int i = 0; i < pendingRequests->size; i++) {
         if (pendingRequests->theArray[i].direction == direction && !pendingRequests->theArray[i].completed &&
-            !pendingRequests->theArray[i].inProgress && pendingRequests->theArray[i].startFloor > floor) {
+            pendingRequests->theArray[i].inProgress && pendingRequests->theArray[i].startFloor >= floor) {
             toReturn++;
         }
     }
@@ -163,7 +163,7 @@ int getPendingBelow(struct passengerGroupArray *pendingRequests, bool direction,
     int toReturn = 0;
     for (int i = 0; i < pendingRequests->size; i++) {
         if (pendingRequests->theArray[i].direction == direction && !pendingRequests->theArray[i].completed &&
-            !pendingRequests->theArray[i].inProgress && pendingRequests->theArray[i].startFloor < floor) {
+            pendingRequests->theArray[i].inProgress && pendingRequests->theArray[i].startFloor <= floor) {
             toReturn++;
         }
     }
@@ -208,6 +208,7 @@ bool whichDirection(struct passengerGroupArray *pendingRequests, struct elevator
     if(elevator->direction == false) {
         if (getPendingAbove(pendingRequests, true, elevator->currentFloor) && !anyInProgressGoingDirection(pendingRequests, false)) {
             printf("Elevator changed direction in whichdirection, now going up\n");
+            elevator->direction = true;
             return true;
         }
         else if(getPendingAbove(pendingRequests, false, elevator->currentFloor) && anyInProgressGoingDirection(pendingRequests, false)){
@@ -218,6 +219,7 @@ bool whichDirection(struct passengerGroupArray *pendingRequests, struct elevator
     else if(elevator->direction == true){
         if(getPendingBelow(pendingRequests, false, elevator->currentFloor)  && !anyInProgressGoingDirection(pendingRequests, true)){
             printf("Elevator changed direction in whichdirection, now going down\n");
+            elevator->direction = false;
             return false;
         }
         else if (getPendingBelow(pendingRequests, true, elevator->currentFloor) && anyInProgressGoingDirection(pendingRequests, false)){
