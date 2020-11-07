@@ -35,7 +35,7 @@ void *floorThread(void *argStruct) {
     struct passengerGroupArray *pendingRequests = threadArgs->pendingRequests;
     while (CURRENTTIME < TOTALTIME) {
         pthread_mutex_lock(&timeMutex);
-        if (CURRENTTIME % 5 == 0) {
+        if (CURRENTTIME % interval == 0) {
             if (rand() % TOTALFLOORS == 0) {
                 pthread_mutex_lock(&mutex);
                 struct passengerGroup toAdd = generatePassenger(CURRENTTIME, floor);
@@ -65,13 +65,6 @@ void init(struct passengerGroupArray *toInit) {
     toInit->size = 0;
     CURRENTTIME = 0;
     OUTFILE = fopen("elevatorOutput.txt", "w");
-//    struct passengerGroup test1 = generatePassenger(0);
-//    struct passengerGroup test2 = generatePassenger(5);
-//    addPassengerGroup(test1, &passengers);
-//    addPassengerGroup(test2, &passengers);
-//    for(int i = 0; i < passengers.size; i++){
-//        printf("%d", passengers.theArray[i].numPassengers);
-//    }
 }
 
 void waitFor(int howLong) {
@@ -81,7 +74,6 @@ void waitFor(int howLong) {
         CURRENTTIME++;
         sleep(1);
         printf("Waited for %d/%d\n", i + 1, howLong);
-        //fprintf(OUTFILE, "Waited for %d/%d\n", i + 1, howLong);
     }
     printf("Done waiting, current time is %d\n", CURRENTTIME);
     fprintf(OUTFILE, "Done waiting, current time is %d\n", CURRENTTIME);
@@ -121,17 +113,6 @@ void goDown(struct elevator *elevator) {
     fprintf(OUTFILE, "Arrived at time %d, current floor: %d\n", CURRENTTIME, elevator->currentFloor);
 }
 
-int getInProgress(struct passengerGroupArray *pendingRequests, bool direction) {
-    int toReturn = 0;
-    for (int i = 0; i < pendingRequests->size; i++) {
-        if (pendingRequests->theArray[i].inProgress && pendingRequests->theArray[i].direction == direction &&
-            !pendingRequests->theArray[i].completed) {
-            toReturn++;
-        }
-    }
-    return toReturn;
-}
-
 bool getPending(struct passengerGroupArray *pendingRequests) {
     bool toReturn = false;
     for (int i = 0; i < pendingRequests->size; i++) {
@@ -163,14 +144,6 @@ bool getPendingBelow(struct passengerGroupArray *pendingRequests, bool direction
         }
     }
     return toReturn;
-}
-
-bool getInProgressDirection(struct passengerGroupArray *pendingRequests) {
-    for (int i = 0; i < pendingRequests->size; i++) {
-        if (pendingRequests->theArray[i].inProgress && !pendingRequests->theArray[i].completed) {
-            return pendingRequests->theArray[i].direction;
-        }
-    }
 }
 
 void printCurrentPassengers(struct passengerGroupArray *pendingRequests) {
@@ -261,6 +234,31 @@ bool shouldPickPassengerGroupUp(struct passengerGroup *toCheck, struct elevator 
     return toReturn;
 }
 
+void printStats(struct passengerGroupArray *toPrint) {
+    // # passengers serviced
+    // avg wait time for all serviced passengers
+    // avg turnaround time
+    // doing these stats for each individual passenger
+    int numServiced = 0;
+    double avgWaitTime = 0;
+    double avgTurnaroundTime = 0;
+    for(int i = 0; i < toPrint->size; i++){
+        if(toPrint->theArray[i].completed){
+            numServiced += toPrint->theArray[i].numPassengers;
+            avgWaitTime += (toPrint->theArray[i].timePickedUp - toPrint->theArray[i].generatedTime) * toPrint->theArray[i].numPassengers;
+            avgTurnaroundTime += (toPrint->theArray[i].timeDroppedOff - toPrint->theArray[i].generatedTime) * toPrint->theArray[i].numPassengers;
+        }
+    }
+    avgWaitTime /= numServiced;
+    avgTurnaroundTime /= numServiced;
+    printf("\n\nNumber of passengers serviced: %d\n", numServiced);
+    printf("Average wait time of all passengers: %g\n", avgWaitTime);
+    printf("Average turnaround time of all passengers: %g\n", avgTurnaroundTime);
+    fprintf(OUTFILE, "\n\nNumber of passengers serviced: %d\n", numServiced );
+    fprintf(OUTFILE, "Average wait time of all passengers: %g\n", avgWaitTime);
+    fprintf(OUTFILE, "Average turnaround time of all passengers: %g\n", avgTurnaroundTime);
+}
+
 void *elevatorScheduler(void *argStruct) {
     struct threadArgs *threadArgs = (struct threadArgs *) argStruct;
     struct passengerGroupArray *pendingRequests = threadArgs->pendingRequests;
@@ -280,9 +278,6 @@ void *elevatorScheduler(void *argStruct) {
             if (shouldPickPassengerGroupUp(&pendingRequests->theArray[i], elevator)) {
                 // if they can board, now we see what passengerGroups there are available to board at the current floor at array[i]
                 // boarding elevator, coming onto elevator
-//                    if (elevator->direction != pendingRequests->theArray[i].direction) {
-//                        elevator->direction = pendingRequests->theArray[i].direction;
-//                    }
 
                 elevator->numPassengersOnElevator += pendingRequests->theArray[i].numPassengers;
                 pendingRequests->theArray[i].timePickedUp = CURRENTTIME;
@@ -315,7 +310,6 @@ void *elevatorScheduler(void *argStruct) {
         }
         printf("Current number of passengers: %d\n", elevator->numPassengersOnElevator);
         fprintf(OUTFILE, "Current number of passengers: %d\n", elevator->numPassengersOnElevator);
-
         if (passengerOperation) {
             waitFor(2);
             printf("passenger operation done, time increased by 2\n");
@@ -334,13 +328,11 @@ void *elevatorScheduler(void *argStruct) {
             fprintf(OUTFILE, "Elevator standing still\n");
             waitFor(1);
         }
-
         printCurrentPassengers(pendingRequests);
         printf("\n\n");
         fprintf(OUTFILE, "\n\n");
     }
 }
-
 
 void *timeThread() {
     while (CURRENTTIME <= TOTALTIME) {
@@ -383,6 +375,7 @@ void run() {
     }
     pthread_join(timeThreadtime, NULL);
     pthread_join(elevatorThread, NULL);
+    printStats(&pendingRequests);
 }
 
 int main(int argc, char **argv) {
