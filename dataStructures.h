@@ -57,7 +57,6 @@ void addPassengerGroup(struct passengerGroup toAdd, struct passengerGroupArray *
         newArray[i] = passengers->theArray[i];
     }
     newArray[passengers->size - 1] = toAdd;
-    //free(passengers->theArray);
     passengers->theArray = newArray;
 }
 
@@ -74,7 +73,6 @@ void removePassengerGroup(int toRemoveIndex, struct passengerGroupArray *passeng
             newArray[i] = passengers->theArray[i];
         }
     }
-    //free(passengers->theArray);
     passengers->theArray = newArray;
 }
 
