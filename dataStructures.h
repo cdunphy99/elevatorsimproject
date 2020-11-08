@@ -25,10 +25,7 @@ struct elevator {
     // true = up, false = down
     bool direction;
     int numPassengersOnElevator;
-    int *path;
-    int pathSize;
     // 0 = stopped, 1 = stopping, 2 = going up, 3 = going down
-    int currentState;
 };
 
 
@@ -57,7 +54,6 @@ void addPassengerGroup(struct passengerGroup toAdd, struct passengerGroupArray *
         newArray[i] = passengers->theArray[i];
     }
     newArray[passengers->size - 1] = toAdd;
-    //free(passengers->theArray);
     passengers->theArray = newArray;
 }
 
@@ -74,7 +70,6 @@ void removePassengerGroup(int toRemoveIndex, struct passengerGroupArray *passeng
             newArray[i] = passengers->theArray[i];
         }
     }
-    //free(passengers->theArray);
     passengers->theArray = newArray;
 }
 
