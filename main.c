@@ -246,16 +246,6 @@ bool shouldPickPassengerGroupUp(struct passengerGroup *toCheck, struct elevator 
     return toReturn;
 }
 
-bool shouldDropPassengerGroupOff(struct passengerGroup *toCheck, struct elevator *elevator) {
-    bool toReturn = false;
-    if (elevator->currentFloor == toCheck->endFloor &&
-        toCheck->inProgress &&
-        elevator->numPassengersOnElevator - toCheck->numPassengers >= 0 &&
-        !toCheck->completed) {
-        toReturn = true;
-    }
-    return toReturn;
-}
 
 //this function calculates and prints the stats after the simulation
 void printStats(struct passengerGroupArray *toPrint) {
@@ -313,16 +303,17 @@ void *elevatorScheduler(void *argStruct) {
                 passengerOperation = true;
             }
             //if we should drop off the passengers
-            if (shouldDropPassengerGroupOff(&pendingRequests->theArray[i], elevator)) {
+            if (elevator->currentFloor == pendingRequests->theArray[i].endFloor &&
+                pendingRequests->theArray[i].inProgress &&
+                elevator->numPassengersOnElevator - pendingRequests->theArray[i].numPassengers >= 0 &&
+                !pendingRequests->theArray[i].completed) {
                 elevator->numPassengersOnElevator -= pendingRequests->theArray[i].numPassengers;
                 pendingRequests->theArray[i].timeDroppedOff = CURRENTTIME;
                 pendingRequests->theArray[i].completed = true;
                 pendingRequests->theArray[i].inProgress = false;
-                printf("Time %d: %d passengers left on floor %d\n", CURRENTTIME,
-                       pendingRequests->theArray[i].numPassengers,
+                printf("Time %d: %d passengers left on floor %d\n", CURRENTTIME, pendingRequests->theArray[i].numPassengers,
                        elevator->currentFloor);
-                fprintf(OUTFILE, "Time %d: %d passengers left on floor %d\n", CURRENTTIME,
-                        pendingRequests->theArray[i].numPassengers,
+                fprintf(OUTFILE, "Time %d: %d passengers left on floor %d\n", CURRENTTIME, pendingRequests->theArray[i].numPassengers,
                         elevator->currentFloor);
                 printf("Current number of passengers: %d\n", elevator->numPassengersOnElevator);
                 fprintf(OUTFILE, "Current number of passengers: %d\n", elevator->numPassengersOnElevator);
