@@ -49,7 +49,8 @@ void *floorThread(void *argStruct) {
                     continue;
                 } else {
                     addPassengerGroup(toAdd, pendingRequests);
-                    printf("Time %d: Call received at F%d with destination F%d, %d passengers\n", CURRENTTIME, toAdd.startFloor,
+                    printf("Time %d: Call received at F%d with destination F%d, %d passengers\n", CURRENTTIME,
+                           toAdd.startFloor,
                            toAdd.endFloor, toAdd.numPassengers);
                     fprintf(OUTFILE, "Time %d: Call received at F%d with destination F%d, %d passengers\n", CURRENTTIME,
                             toAdd.startFloor,
@@ -91,7 +92,6 @@ void waitFor(int howLong) {
 //makes elevator goUp by one floor
 void goUp(struct elevator *elevator) {
     elevator->direction = true;
-    elevator->currentState = 2;
     printf("Going up at time %d, current floor: %d\n", CURRENTTIME, elevator->currentFloor);
     fprintf(OUTFILE, "Going up at time %d, current floor: %d\n", CURRENTTIME, elevator->currentFloor);
     waitFor(5);
@@ -103,7 +103,6 @@ void goUp(struct elevator *elevator) {
 //makes elevator goDown by one floor
 void goDown(struct elevator *elevator) {
     elevator->direction = false;
-    elevator->currentState = 3;
     printf("Going down at time %d, current floor: %d\n", CURRENTTIME, elevator->currentFloor);
     fprintf(OUTFILE, "Going down at time %d, current floor: %d\n", CURRENTTIME, elevator->currentFloor);
     waitFor(5);
@@ -190,14 +189,16 @@ bool anyInProgressGoingDirection(struct passengerGroupArray *pendingRequests, bo
 //this function checks the direction of the elevator, and returns the direction it should go in
 bool whichDirection(struct passengerGroupArray *pendingRequests, struct elevator *elevator) {
     if (elevator->direction == false) {
-        if(elevator->currentFloor - 1 <= 0){
+        if (elevator->currentFloor - 1 <= 0) {
             elevator->direction = true;
             return true;
         }
-        if (getPendingBelow(pendingRequests, elevator->currentFloor) || anyInProgressGoingDirection(pendingRequests, false)) {
+        if (getPendingBelow(pendingRequests, elevator->currentFloor) ||
+            anyInProgressGoingDirection(pendingRequests, false)) {
             printf("continuing in current direction\n");
             return elevator->direction;
-        } else if (getPendingAbove(pendingRequests, elevator->currentFloor) || !anyInProgressGoingDirection(pendingRequests, false)) {
+        } else if (getPendingAbove(pendingRequests, elevator->currentFloor) ||
+                   !anyInProgressGoingDirection(pendingRequests, false)) {
             printf("getpendingabove: %d\n", getPendingAbove(pendingRequests, elevator->currentFloor));
             printf("Elevator changed direction in whichdirection, now going up\n");
             elevator->direction = true;
@@ -206,14 +207,16 @@ bool whichDirection(struct passengerGroupArray *pendingRequests, struct elevator
             return false;
         }
     } else if (elevator->direction == true) {
-        if(elevator->currentFloor + 1 > TOTALFLOORS) {
+        if (elevator->currentFloor + 1 > TOTALFLOORS) {
             elevator->direction = false;
             return false;
         }
-        if (getPendingAbove(pendingRequests, elevator->currentFloor) || anyInProgressGoingDirection(pendingRequests, true)) {
+        if (getPendingAbove(pendingRequests, elevator->currentFloor) ||
+            anyInProgressGoingDirection(pendingRequests, true)) {
             printf("continuing in current direction\n");
             return elevator->direction;
-        } else if (getPendingBelow(pendingRequests, elevator->currentFloor) || !anyInProgressGoingDirection(pendingRequests, true)) {
+        } else if (getPendingBelow(pendingRequests, elevator->currentFloor) ||
+                   !anyInProgressGoingDirection(pendingRequests, true)) {
             printf("getpendingbelow: %d\n", getPendingBelow(pendingRequests, elevator->currentFloor));
             printf("Elevator changed direction in whichdirection, now going down\n");
             elevator->direction = false;
@@ -227,13 +230,29 @@ bool whichDirection(struct passengerGroupArray *pendingRequests, struct elevator
 //this function checks if we can pickup a passenger group on a floor
 bool shouldPickPassengerGroupUp(struct passengerGroup *toCheck, struct elevator *elevator) {
     bool toReturn = false;
-    if (toCheck->startFloor == elevator->currentFloor && !toCheck->inProgress && !toCheck->completed &&
-        elevator->numPassengersOnElevator > 0 && toCheck->direction == elevator->direction) {
-        if (toCheck->numPassengers + elevator->numPassengersOnElevator <= 10) {
-            toReturn = true;
-        } else if (elevator->numPassengersOnElevator == 0) {
-            toReturn = true;
+    if (toCheck->startFloor == elevator->currentFloor) {
+        if (!toCheck->inProgress && !toCheck->completed) {
+            if (elevator->numPassengersOnElevator > 0) {
+                if (toCheck->direction == elevator->direction) {
+                    if (toCheck->numPassengers + elevator->numPassengersOnElevator <= 10) {
+                        toReturn = true;
+                    }
+                }
+            } else if (elevator->numPassengersOnElevator == 0) {
+                toReturn = true;
+            }
         }
+    }
+    return toReturn;
+}
+
+bool shouldDropPassengerGroupOff(struct passengerGroup *toCheck, struct elevator *elevator) {
+    bool toReturn = false;
+    if (elevator->currentFloor == toCheck->endFloor &&
+        toCheck->inProgress &&
+        elevator->numPassengersOnElevator - toCheck->numPassengers >= 0 &&
+        !toCheck->completed) {
+        toReturn = true;
     }
     return toReturn;
 }
@@ -247,11 +266,13 @@ void printStats(struct passengerGroupArray *toPrint) {
     int numServiced = 0;
     double avgWaitTime = 0;
     double avgTurnaroundTime = 0;
-    for(int i = 0; i < toPrint->size; i++){
-        if(toPrint->theArray[i].completed){
+    for (int i = 0; i < toPrint->size; i++) {
+        if (toPrint->theArray[i].completed) {
             numServiced += toPrint->theArray[i].numPassengers;
-            avgWaitTime += (toPrint->theArray[i].timePickedUp - toPrint->theArray[i].generatedTime) * toPrint->theArray[i].numPassengers;
-            avgTurnaroundTime += (toPrint->theArray[i].timeDroppedOff - toPrint->theArray[i].generatedTime) * toPrint->theArray[i].numPassengers;
+            avgWaitTime += (toPrint->theArray[i].timePickedUp - toPrint->theArray[i].generatedTime) *
+                           toPrint->theArray[i].numPassengers;
+            avgTurnaroundTime += (toPrint->theArray[i].timeDroppedOff - toPrint->theArray[i].generatedTime) *
+                                 toPrint->theArray[i].numPassengers;
         }
     }
     avgWaitTime /= numServiced;
@@ -260,7 +281,7 @@ void printStats(struct passengerGroupArray *toPrint) {
     printf("\n\nNumber of passengers serviced: %d\n", numServiced);
     printf("Average wait time of all passengers: %g\n", avgWaitTime);
     printf("Average turnaround time of all passengers: %g\n", avgTurnaroundTime);
-    fprintf(OUTFILE, "\n\nNumber of passengers serviced: %d\n", numServiced );
+    fprintf(OUTFILE, "\n\nNumber of passengers serviced: %d\n", numServiced);
     fprintf(OUTFILE, "Average wait time of all passengers: %g\n", avgWaitTime);
     fprintf(OUTFILE, "Average turnaround time of all passengers: %g\n", avgTurnaroundTime);
 }
@@ -292,17 +313,16 @@ void *elevatorScheduler(void *argStruct) {
                 passengerOperation = true;
             }
             //if we should drop off the passengers
-            if (elevator->currentFloor == pendingRequests->theArray[i].endFloor &&
-                pendingRequests->theArray[i].inProgress &&
-                elevator->numPassengersOnElevator - pendingRequests->theArray[i].numPassengers >= 0 &&
-                !pendingRequests->theArray[i].completed) {
+            if (shouldDropPassengerGroupOff(&pendingRequests->theArray[i], elevator)) {
                 elevator->numPassengersOnElevator -= pendingRequests->theArray[i].numPassengers;
                 pendingRequests->theArray[i].timeDroppedOff = CURRENTTIME;
                 pendingRequests->theArray[i].completed = true;
                 pendingRequests->theArray[i].inProgress = false;
-                printf("Time %d: %d passengers left on floor %d\n", CURRENTTIME, pendingRequests->theArray[i].numPassengers,
+                printf("Time %d: %d passengers left on floor %d\n", CURRENTTIME,
+                       pendingRequests->theArray[i].numPassengers,
                        elevator->currentFloor);
-                fprintf(OUTFILE, "Time %d: %d passengers left on floor %d\n", CURRENTTIME, pendingRequests->theArray[i].numPassengers,
+                fprintf(OUTFILE, "Time %d: %d passengers left on floor %d\n", CURRENTTIME,
+                        pendingRequests->theArray[i].numPassengers,
                         elevator->currentFloor);
                 printf("Current number of passengers: %d\n", elevator->numPassengersOnElevator);
                 fprintf(OUTFILE, "Current number of passengers: %d\n", elevator->numPassengersOnElevator);
@@ -324,11 +344,11 @@ void *elevatorScheduler(void *argStruct) {
             //going UP
             if (elevator->direction == true) {
                 goUp(elevator);
-            //going DOWN
+                //going DOWN
             } else if (elevator->direction == false) {
                 goDown(elevator);
             }
-        //there are no pending or in progress requests and the elevator should stop
+            //there are no pending or in progress requests and the elevator should stop
         } else {
             printf("Elevator standing still\n");
             fprintf(OUTFILE, "Elevator standing still\n");
