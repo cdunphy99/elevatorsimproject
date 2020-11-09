@@ -198,7 +198,7 @@ bool whichDirection(struct passengerGroupArray *pendingRequests, struct elevator
             printf("continuing in current direction\n");
             return elevator->direction;
         } else if (getPendingAbove(pendingRequests, elevator->currentFloor) ||
-                   !anyInProgressGoingDirection(pendingRequests, false)) {
+                   anyInProgressGoingDirection(pendingRequests, true)) {
             printf("getpendingabove: %d\n", getPendingAbove(pendingRequests, elevator->currentFloor));
             printf("Elevator changed direction in whichdirection, now going up\n");
             elevator->direction = true;
@@ -216,7 +216,7 @@ bool whichDirection(struct passengerGroupArray *pendingRequests, struct elevator
             printf("continuing in current direction\n");
             return elevator->direction;
         } else if (getPendingBelow(pendingRequests, elevator->currentFloor) ||
-                   !anyInProgressGoingDirection(pendingRequests, true)) {
+                   anyInProgressGoingDirection(pendingRequests, false)) {
             printf("getpendingbelow: %d\n", getPendingBelow(pendingRequests, elevator->currentFloor));
             printf("Elevator changed direction in whichdirection, now going down\n");
             elevator->direction = false;
@@ -240,6 +240,9 @@ bool shouldPickPassengerGroupUp(struct passengerGroup *toCheck, struct elevator 
                 }
             } else if (elevator->numPassengersOnElevator == 0) {
                 toReturn = true;
+                if(elevator->direction != toCheck->direction){
+                    elevator->direction = toCheck->direction;
+                }
             }
         }
     }
@@ -289,19 +292,6 @@ void *elevatorScheduler(void *argStruct) {
     while (CURRENTTIME < TOTALTIME) {
         passengerOperation = false;
         for (int i = 0; i < pendingRequests->size; i++) {
-            //if we can pick up the passengers
-            if (shouldPickPassengerGroupUp(&pendingRequests->theArray[i], elevator)) {
-                elevator->numPassengersOnElevator += pendingRequests->theArray[i].numPassengers;
-                pendingRequests->theArray[i].timePickedUp = CURRENTTIME;
-                pendingRequests->theArray[i].inProgress = true;
-                printf("Time %d: %d passengers boarding on floor %d, destination F%d\n",
-                       CURRENTTIME, pendingRequests->theArray[i].numPassengers, elevator->currentFloor,
-                       pendingRequests->theArray[i].endFloor);
-                fprintf(OUTFILE, "Time %d: %d passengers boarding on floor %d, destination F%d\n",
-                        CURRENTTIME, pendingRequests->theArray[i].numPassengers, elevator->currentFloor,
-                        pendingRequests->theArray[i].endFloor);
-                passengerOperation = true;
-            }
             //if we should drop off the passengers
             if (elevator->currentFloor == pendingRequests->theArray[i].endFloor &&
                 pendingRequests->theArray[i].inProgress &&
@@ -317,6 +307,19 @@ void *elevatorScheduler(void *argStruct) {
                         elevator->currentFloor);
                 printf("Current number of passengers: %d\n", elevator->numPassengersOnElevator);
                 fprintf(OUTFILE, "Current number of passengers: %d\n", elevator->numPassengersOnElevator);
+                passengerOperation = true;
+            }
+            //if we can pick up the passengers
+            if (shouldPickPassengerGroupUp(&pendingRequests->theArray[i], elevator)) {
+                elevator->numPassengersOnElevator += pendingRequests->theArray[i].numPassengers;
+                pendingRequests->theArray[i].timePickedUp = CURRENTTIME;
+                pendingRequests->theArray[i].inProgress = true;
+                printf("Time %d: %d passengers boarding on floor %d, destination F%d\n",
+                       CURRENTTIME, pendingRequests->theArray[i].numPassengers, elevator->currentFloor,
+                       pendingRequests->theArray[i].endFloor);
+                fprintf(OUTFILE, "Time %d: %d passengers boarding on floor %d, destination F%d\n",
+                        CURRENTTIME, pendingRequests->theArray[i].numPassengers, elevator->currentFloor,
+                        pendingRequests->theArray[i].endFloor);
                 passengerOperation = true;
             }
         }
@@ -405,7 +408,7 @@ void run() {
 
 int main(int argc, char **argv) {
     if (argc != 4) {
-        printf("Usage: a.out [var_1] [var_2]\n");
+        printf("Usage: elevatorsim [floors] [interval] [time] \n");
         exit(0);
     }
     TOTALFLOORS = atoi(argv[1]);
